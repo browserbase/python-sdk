@@ -1,6 +1,6 @@
 import unittest
 import os
-from src.browserbase import Browserbase
+from browserbase import Browserbase
 
 
 class BrowserbaseTestCase(unittest.TestCase):
