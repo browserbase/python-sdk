@@ -1,4 +1,5 @@
 from playwright.sync_api import sync_playwright
+from typing import List
 
 
 class Browserbase:
@@ -24,3 +25,22 @@ class Browserbase:
             browser.close()
 
             return html
+
+    # Load multiple pages in a headless browser and return the html contents
+    def load_urls(self, urls: List[str]):
+        if not urls:
+            raise ValueError("Page URL was not provided")
+
+        with sync_playwright() as p:
+            browser = p.chromium.connect_over_cdp(
+                "wss://api.browserbase.com?apiKey=" + self.api_key
+            )
+
+            results = []
+            for url in urls:
+                page = browser.new_page()
+                page.goto(url)
+                results.append(page.content())
+
+            browser.close()
+            return results
