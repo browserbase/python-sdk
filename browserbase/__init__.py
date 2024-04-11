@@ -3,15 +3,15 @@ from typing import List
 
 
 class Browserbase:
-    # Create new Browserbase instance
     def __init__(self, api_key: str):
+        """Create new Browserbase instance"""
         if not api_key:
             raise ValueError("Browserbase API key was not provided")
 
         self.api_key = api_key
 
-    # Load a page in a headless browser and return the html contents
     def load(self, url: str):
+        """Load a page in a headless browser and return the html contents"""
         if not url:
             raise ValueError("Page URL was not provided")
 
@@ -26,8 +26,8 @@ class Browserbase:
 
             return html
 
-    # Load multiple pages in a headless browser and return the html contents
     def load_urls(self, urls: List[str]):
+        """Load multiple pages in a headless browser and return the html contents"""
         if not urls:
             raise ValueError("Page URL was not provided")
 
@@ -36,11 +36,9 @@ class Browserbase:
                 "wss://api.browserbase.com?apiKey=" + self.api_key
             )
 
-            results = []
             for url in urls:
                 page = browser.new_page()
                 page.goto(url)
-                results.append(page.content())
+                yield page.content()
 
             browser.close()
-            return results
