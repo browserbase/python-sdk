@@ -37,12 +37,17 @@ class Browserbase:
                 "wss://api.browserbase.com?apiKey=" + self.api_key
             )
 
+            html_contents = []
             for url in urls:
                 page = browser.new_page()
                 page.goto(url)
-                yield page.content()
+                html = page.content()
+                html_contents.append(html)
+                page.close()
 
             browser.close()
+
+            return html_contents
 
     def screenshot(self, url: str, full_page: bool = False):
         """Load a page in a headless browser and return a screenshot as base64 string"""
@@ -55,7 +60,7 @@ class Browserbase:
             )
             page = browser.new_page()
             page.goto(url)
-            screenshot_bytes = page.screenshot(full_page)
+            screenshot_bytes = page.screenshot(full_page=full_page)
             decoded = b64encode(screenshot_bytes).decode()
             browser.close()
 

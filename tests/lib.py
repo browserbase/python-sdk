@@ -13,7 +13,7 @@ class BrowserbaseTestCase(unittest.TestCase):
 
     def test_load_urls(self):
         result = self.browserbase.load_urls(["https://example.com"])
-        self.assertIn("Example Domain", next(result))
+        self.assertIn("Example Domain", result[0])
 
     def test_screenshot(self):
         result = self.browserbase.screenshot("https://example.com")
