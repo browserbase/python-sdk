@@ -17,7 +17,7 @@ class BrowserbaseTestCase(unittest.TestCase):
 
     def test_screenshot(self):
         result = self.browserbase.screenshot("https://example.com")
-        self.assertIn("oq0IBiQAAAABJRU5ErkJggg==", result)
+        self.assertEqual(29806, len(result))
 
 
 if __name__ == "__main__":

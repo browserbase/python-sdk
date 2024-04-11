@@ -45,7 +45,7 @@ class Browserbase:
             browser.close()
 
     def screenshot(self, url: str, full_page: bool = False):
-        """Load a page in a headless browser and return a screenshot as base64 string"""
+        """Load a page in a headless browser and return a screenshot as bytes"""
         if not url:
             raise ValueError("Page URL was not provided")
 
@@ -55,8 +55,7 @@ class Browserbase:
             )
             page = browser.new_page()
             page.goto(url)
-            screenshot_bytes = page.screenshot(full_page=full_page)
-            decoded = b64encode(screenshot_bytes).decode()
+            screenshot = page.screenshot(full_page=full_page)
             browser.close()
 
-            return decoded
+            return screenshot
