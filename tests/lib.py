@@ -12,13 +12,12 @@ class BrowserbaseTestCase(unittest.TestCase):
         self.assertIn("Example Domain", result)
 
     def test_load_urls(self):
-        result = self.browserbase.load_urls(["https://example.com"])
-        self.assertIn("Example Domain", result[0])
+        result = next(self.browserbase.load_urls(["https://example.com"]))
+        self.assertIn("Example Domain", result)
 
     def test_screenshot(self):
         result = self.browserbase.screenshot("https://example.com")
-        print(result)
-        self.assertIn("Example Domain", result)
+        self.assertIn("oq0IBiQAAAABJRU5ErkJggg==", result)
 
 
 if __name__ == "__main__":
