@@ -15,6 +15,11 @@ class BrowserbaseTestCase(unittest.TestCase):
         result = self.browserbase.load_urls(["https://example.com"])
         self.assertIn("Example Domain", next(result))
 
+    def test_screenshot(self):
+        result = self.browserbase.screenshot("https://example.com")
+        print(result)
+        self.assertIn("Example Domain", result)
+
 
 if __name__ == "__main__":
     unittest.main()

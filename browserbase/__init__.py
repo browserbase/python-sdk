@@ -1,5 +1,6 @@
-from playwright.sync_api import sync_playwright
 from typing import List
+from playwright.sync_api import sync_playwright
+from base64 import b64encode
 
 
 class Browserbase:
@@ -42,3 +43,20 @@ class Browserbase:
                 yield page.content()
 
             browser.close()
+
+    def screenshot(self, url: str, full_page: bool = False):
+        """Load a page in a headless browser and return a screenshot as base64 string"""
+        if not url:
+            raise ValueError("Page URL was not provided")
+
+        with sync_playwright() as p:
+            browser = p.chromium.connect_over_cdp(
+                "wss://api.browserbase.com?apiKey=" + self.api_key
+            )
+            page = browser.new_page()
+            page.goto(url)
+            screenshot_bytes = page.screenshot(full_page)
+            decoded = b64encode(screenshot_bytes).decode()
+            browser.close()
+
+            return decoded
