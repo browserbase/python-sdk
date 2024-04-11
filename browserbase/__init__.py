@@ -1,6 +1,5 @@
 from typing import List
 from playwright.sync_api import sync_playwright
-from base64 import b64encode
 
 
 class Browserbase:
