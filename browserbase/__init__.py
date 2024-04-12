@@ -19,7 +19,8 @@ class Browserbase:
             browser = p.chromium.connect_over_cdp(
                 "wss://api.browserbase.com?apiKey=" + self.api_key
             )
-            page = browser.new_page()
+            default_context = browser.contexts[0]
+            page = default_context.pages[0]
             page.goto(url)
             html = page.content()
             browser.close()
@@ -36,8 +37,10 @@ class Browserbase:
                 "wss://api.browserbase.com?apiKey=" + self.api_key
             )
 
+            default_context = browser.contexts[0]
+            page = default_context.pages[0]
+
             for url in urls:
-                page = browser.new_page()
                 page.goto(url)
                 yield page.content()
 
@@ -52,6 +55,7 @@ class Browserbase:
             browser = p.chromium.connect_over_cdp(
                 "wss://api.browserbase.com?apiKey=" + self.api_key
             )
+
             page = browser.new_page()
             page.goto(url)
             screenshot = page.screenshot(full_page=full_page)
