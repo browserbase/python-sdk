@@ -1,12 +1,14 @@
 from base64 import b64encode
 from enum import Enum
 
-class GPT4ImageDetail(Enum):
-    low = 'low'
-    high = 'high'
-    auto = 'auto'
 
-def GPT4Image(img: bytes, detail: GPT4ImageDetail):
+class GPT4ImageDetail(Enum):
+    low = "low"
+    high = "high"
+    auto = "auto"
+
+
+def GPT4Image(img: bytes, detail: GPT4ImageDetail = GPT4ImageDetail.auto):
     if not img:
         raise ValueError("Image was not provided")
 
