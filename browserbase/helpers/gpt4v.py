@@ -1,7 +1,12 @@
 from base64 import b64encode
+from enum import Enum
 
+class GPT4ImageDetail(Enum):
+    low = 'low'
+    high = 'high'
+    auto = 'auto'
 
-def GPT4Image(img: bytes, detail: str):
+def GPT4Image(img: bytes, detail: GPT4ImageDetail):
     if not img:
         raise ValueError("Image was not provided")
 
@@ -9,7 +14,7 @@ def GPT4Image(img: bytes, detail: str):
     return {
         "type": "image_url",
         "image_url": {
-            "url": "data:image/jpeg;base64," + img_encoded,
+            "url": f"data:image/jpeg;base64,{img_encoded}",
             "detail": detail,
         },
     }
