@@ -11,6 +11,10 @@ class BrowserbaseTestCase(unittest.TestCase):
         result = self.browserbase.load("https://example.com")
         self.assertIn("Example Domain", result)
 
+    def test_load_text(self):
+        result = self.browserbase.load("https://example.com/", text_content=True)
+        self.assertIn("Example Domain", result)
+
     def test_load_urls(self):
         result = next(self.browserbase.load_urls(["https://example.com"]))
         self.assertIn("Example Domain", result)

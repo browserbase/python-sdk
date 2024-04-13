@@ -10,8 +10,8 @@ class Browserbase:
 
         self.api_key = api_key
 
-    def load(self, url: str):
-        """Load a page in a headless browser and return the html contents"""
+    def load(self, url: str, text_content: bool = False):
+        """Load a page in a headless browser and return the contents"""
         if not url:
             raise ValueError("Page URL was not provided")
 
@@ -23,12 +23,19 @@ class Browserbase:
             page = default_context.pages[0]
             page.goto(url)
             html = page.content()
+            if text_content:
+                readable = page.evaluate("""async () => {
+                  const readability = await import('https://cdn.skypack.dev/@mozilla/readability');
+                  return (new readability.Readability(document)).parse();
+                }""")
+
+                html = f"{readable["title"]}\n{readable["textContent"]}"
             browser.close()
 
             return html
 
-    def load_urls(self, urls: List[str]):
-        """Load multiple pages in a headless browser and return the html contents"""
+    def load_urls(self, urls: List[str], text_content: bool = False):
+        """Load multiple pages in a headless browser and return the contents"""
         if not urls:
             raise ValueError("Page URL was not provided")
 
@@ -42,7 +49,15 @@ class Browserbase:
 
             for url in urls:
                 page.goto(url)
-                yield page.content()
+                html = page.content()
+                if text_content:
+                    readable = page.evaluate("""async () => {
+                      const readability = await import('https://cdn.skypack.dev/@mozilla/readability');
+                      return (new readability.Readability(document)).parse();
+                    }""")
+
+                    html = f"{readable["title"]}\n{readable["textContent"]}"
+                yield html
 
             browser.close()
 
