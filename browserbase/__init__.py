@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 from playwright.sync_api import sync_playwright
 
 
@@ -10,7 +10,15 @@ class Browserbase:
 
         self.api_key = api_key
 
-    def load(self, url: str, text_content: bool = False):
+    def load(self, url: Union[str, List[str]], **args):
+        if isinstance(url, str):
+            return self.load_url(url, **args)
+        elif isinstance(url, list):
+            return self.load_urls(url, **args)
+        else:
+            raise TypeError("Input must be a URL string or a list of URLs")
+
+    def load_url(self, url: str, text_content: bool = False):
         """Load a page in a headless browser and return the contents"""
         if not url:
             raise ValueError("Page URL was not provided")
