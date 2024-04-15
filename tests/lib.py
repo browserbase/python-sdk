@@ -5,7 +5,7 @@ from browserbase import Browserbase
 
 class BrowserbaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.browserbase = Browserbase(os.environ["BROWSERBASE_KEY"])
+        self.browserbase = Browserbase()
 
     def test_load(self):
         result = self.browserbase.load("https://example.com")

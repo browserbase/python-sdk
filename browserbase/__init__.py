@@ -1,9 +1,10 @@
+import os
 from typing import List, Union
 from playwright.sync_api import sync_playwright
 
 
 class Browserbase:
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str = os.environ["BROWSERBASE_KEY"]):
         """Create new Browserbase instance"""
         if not api_key:
             raise ValueError("Browserbase API key was not provided")
