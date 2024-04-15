@@ -37,7 +37,7 @@ class Browserbase:
                   return (new readability.Readability(document)).parse();
                 }""")
 
-                html = f"{readable["title"]}\n{readable["textContent"]}"
+                html = f"{readable['title']}\n{readable['textContent']}"
             browser.close()
 
             return html
@@ -64,7 +64,7 @@ class Browserbase:
                       return (new readability.Readability(document)).parse();
                     }""")
 
-                    html = f"{readable["title"]}\n{readable["textContent"]}"
+                    html = f"{readable['title']}\n{readable['textContent']}"
                 yield html
 
             browser.close()
