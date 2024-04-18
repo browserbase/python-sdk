@@ -1,23 +1,20 @@
 import os
-from typing import List, Union
+from typing import Optional, Sequence, Union
 from playwright.sync_api import sync_playwright
 
 
 class Browserbase:
-    def __init__(self, api_key: str = os.environ["BROWSERBASE_KEY"]):
-        """Create new Browserbase instance"""
-        if not api_key:
-            raise ValueError("Browserbase API key was not provided")
+    def __init__(self, api_key: Optional[str] = None):
+        """Create new Browserbase SDK client instance"""
+        self.api_key = api_key or os.environ["BROWSERBASE_API_KEY"]
 
-        self.api_key = api_key
-
-    def load(self, url: Union[str, List[str]], **args):
+    def load(self, url: Union[str, Sequence[str]], **args):
         if isinstance(url, str):
             return self.load_url(url, **args)
-        elif isinstance(url, list):
+        elif isinstance(url, Sequence):
             return self.load_urls(url, **args)
         else:
-            raise TypeError("Input must be a URL string or a list of URLs")
+            raise TypeError("Input must be a URL string or a Sequence of URLs")
 
     def load_url(self, url: str, text_content: bool = False):
         """Load a page in a headless browser and return the contents"""
@@ -43,7 +40,7 @@ class Browserbase:
 
             return html
 
-    def load_urls(self, urls: List[str], text_content: bool = False):
+    def load_urls(self, urls: Sequence[str], text_content: bool = False):
         """Load multiple pages in a headless browser and return the contents"""
         if not urls:
             raise ValueError("Page URL was not provided")
