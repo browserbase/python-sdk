@@ -1,5 +1,4 @@
 import unittest
-import os
 from browserbase import Browserbase
 
 
