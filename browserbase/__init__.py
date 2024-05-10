@@ -131,6 +131,14 @@ class Browserbase:
         self.connect_url = connect_url or "wss://connect.browserbase.com"
         self.api_url = api_url or "https://www.browserbase.com"
 
+    def get_connect_url(self, session_id=None, proxy=False):
+        base_url = f"{self.connect_url}?apiKey={self.api_key}"
+        if session_id:
+            base_url += f"&sessionId={session_id}"
+        if proxy:
+            base_url += "&enableProxy=true"
+        return base_url
+
     def list_sessions(self) -> List[Session]:
         response = httpx.get(
             f"{self.api_url}/v1/sessions",
@@ -253,14 +261,6 @@ class Browserbase:
         response.raise_for_status()
         data = response.json()
         return [SessionLog(**item) for item in data]
-
-    def get_connect_url(self, session_id=None, proxy=False):
-        base_url = f"{self.connect_url}?apiKey={self.api_key}"
-        if session_id:
-            base_url += f"&sessionId={session_id}"
-        if proxy:
-            base_url += "&enableProxy=true"
-        return base_url
 
     def load(self, url: Union[str, Sequence[str]], **args):
         if isinstance(url, str):
