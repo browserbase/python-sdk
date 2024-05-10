@@ -23,7 +23,7 @@ class Browserbase:
 
         with sync_playwright() as p:
             browser = p.chromium.connect_over_cdp(
-                "wss://api.browserbase.com?apiKey=" + self.api_key
+                f"wss://api.browserbase.com?apiKey={self.api_key}"
             )
             default_context = browser.contexts[0]
             page = default_context.pages[0]
@@ -47,7 +47,7 @@ class Browserbase:
 
         with sync_playwright() as p:
             browser = p.chromium.connect_over_cdp(
-                "wss://api.browserbase.com?apiKey=" + self.api_key
+                f"wss://api.browserbase.com?apiKey={self.api_key}"
             )
 
             default_context = browser.contexts[0]
@@ -74,7 +74,7 @@ class Browserbase:
 
         with sync_playwright() as p:
             browser = p.chromium.connect_over_cdp(
-                "wss://api.browserbase.com?apiKey=" + self.api_key
+                f"wss://api.browserbase.com?apiKey={self.api_key}"
             )
 
             page = browser.new_page()
