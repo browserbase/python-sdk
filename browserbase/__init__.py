@@ -271,9 +271,9 @@ class Browserbase:
     def load_url(
         self,
         url: str,
+        text_content: bool = False,
         session_id: Optional[str] = None,
         proxy: Optional[bool] = None,
-        text_content: bool = False,
     ):
         """Load a page in a headless browser and return the contents"""
         if not url:
@@ -301,9 +301,9 @@ class Browserbase:
     def load_urls(
         self,
         urls: Sequence[str],
-        session_id: Optional[str] = None,
-        proxy: Optional[bool] = None,
         text_content: bool = False,
+        session_id: Optional[str] = None,
+        proxy: Optional[bool] = False,
     ):
         """Load multiple pages in a headless browser and return the contents"""
         if not urls:
@@ -334,9 +334,9 @@ class Browserbase:
     def screenshot(
         self,
         url: str,
+        full_page: bool = False,
         session_id: Optional[str] = None,
         proxy: Optional[bool] = None,
-        full_page: bool = False,
     ):
         """Load a page in a headless browser and return a screenshot as bytes"""
         if not url:
