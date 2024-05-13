@@ -38,48 +38,46 @@ class SessionStatus(str, Enum):
 
 
 class Screen(BaseModel):
-    max_height: Optional[int] = Field(None, alias="maxHeight")
-    max_width: Optional[int] = Field(None, alias="maxWidth")
-    min_height: Optional[int] = Field(None, alias="minHeight")
-    min_width: Optional[int] = Field(None, alias="minWidth")
+    maxHeight: Optional[int] = None
+    maxWidth: Optional[int] = None
+    minHeight: Optional[int] = None
+    minWidth: Optional[int] = None
 
 
 class Fingerprint(BaseModel):
-    browser_list_query: Optional[str] = Field(None, alias="browserListQuery")
-    http_version: Optional[int] = Field(None, alias="httpVersion")
+    browserListQuery: Optional[str] = None
+    httpVersion: Optional[int] = None
     browsers: Optional[List[BrowserType]] = None
     devices: Optional[List[DeviceType]] = None
     locales: Optional[List[str]] = None
-    operating_systems: Optional[List[OperatingSystem]] = Field(
-        None, alias="operatingSystems"
-    )
+    operatingSystems: Optional[List[OperatingSystem]] = None
     screen: Optional[Screen] = None
 
 
 class CreateSessionOptions(BaseModel):
-    project_id: Optional[str] = Field(None, alias="projectId")
-    extension_id: Optional[str] = Field(None, alias="extensionId")
+    projectId: Optional[str] = None
+    extensionId: Optional[str] = None
     fingerprint: Optional[Fingerprint] = None
 
 
 class Session(BaseModel):
     id: str
-    created_at: str = Field(..., alias="createdAt")
-    started_at: str = Field(..., alias="startedAt")
-    ended_at: Optional[str] = Field(..., alias="endedAt")
-    project_id: str = Field(..., alias="projectId")
+    createdAt: str
+    startedAt: str
+    endedAt: Optional[str]
+    projectId: str
     status: Optional[SessionStatus] = None
-    task_id: Optional[str] = Field(None, alias="taskId")
-    proxy_bytes: Optional[int] = Field(None, alias="proxyBytes")
-    expires_at: Optional[str] = Field(None, alias="expiresAt")
-    avg_cpu_usage: Optional[float] = Field(None, alias="avg_cpu_usage")
+    taskId: Optional[str] = None
+    proxyBytes: Optional[int] = None
+    expiresAt: Optional[str] = None
+    avg_cpu_usage: Optional[float] = None
     memory_usage: Optional[int] = None
     details: Optional[str] = None
     logs: Optional[str] = None
 
 
 class UpdateSessionOptions(BaseModel):
-    project_id: Optional[str] = Field(None, alias="projectId")
+    projectId: Optional[str] = None
     status: Optional[SessionStatus] = None
 
 
@@ -90,31 +88,31 @@ class SessionRecording(BaseModel):
 
 
 class DebugConnectionURLs(BaseModel):
-    debugger_fullscreen_url: Optional[str] = Field(None, alias="debuggerFullscreenUrl")
-    debugger_url: Optional[str] = Field(None, alias="debuggerUrl")
-    ws_url: Optional[str] = Field(None, alias="wsUrl")
+    debuggerFullscreenUrl: Optional[str] = None
+    debuggerUrl: Optional[str] = None
+    wsUrl: Optional[str] = None
 
 
 class Request(BaseModel):
     timestamp: Optional[str]
     params: Optional[dict]
-    raw_body: Optional[str] = Field(alias="rawBody")
+    rawBody: Optional[str] = None
 
 
 class Response(BaseModel):
     timestamp: Optional[str]
     result: Optional[dict]
-    raw_body: Optional[str] = Field(alias="rawBody")
+    rawBody: Optional[str] = None
 
 
 class SessionLog(BaseModel):
-    session_id: Optional[str] = Field(alias="sessionId")
+    sessionId: Optional[str] = None
     id: str
     timestamp: Optional[str]
     method: Optional[str]
     request: Optional[Request]
     response: Optional[Response]
-    page_id: Optional[str] = Field(alias="pageId")
+    pageId: Optional[str] = None
 
 
 class Browserbase:
