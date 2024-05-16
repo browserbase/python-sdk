@@ -303,7 +303,7 @@ class Browserbase:
         urls: Sequence[str],
         text_content: bool = False,
         session_id: Optional[str] = None,
-        proxy: Optional[bool] = False,
+        proxy: Optional[bool] = None,
     ):
         """Load multiple pages in a headless browser and return the contents"""
         if not urls:
