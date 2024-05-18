@@ -1,40 +1,18 @@
 import os
 import httpx
 import time
-from typing import Optional, Sequence, Union, List
+from typing import Optional, Sequence, Union, Literal
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from playwright.sync_api import sync_playwright
 
 
-class BrowserType(str, Enum):
-    CHROME = "chrome"
-    FIREFOX = "firefox"
-    EDGE = "edge"
-    SAFARI = "safari"
-
-
-class DeviceType(str, Enum):
-    DESKTOP = "desktop"
-    MOBILE = "mobile"
-
-
-class OperatingSystem(str, Enum):
-    WINDOWS = "windows"
-    MACOS = "macos"
-    LINUX = "linux"
-    IOS = "ios"
-    ANDROID = "android"
-
-
-class SessionStatus(str, Enum):
-    NEW = "NEW"
-    CREATED = "CREATED"
-    ERROR = "ERROR"
-    RUNNING = "RUNNING"
-    REQUEST_RELEASE = "REQUEST_RELEASE"
-    RELEASING = "RELEASING"
-    COMPLETED = "COMPLETED"
+BrowserType = Literal["chrome", "firefox", "edge", "safari"]
+DeviceType = Literal["desktop", "mobile"]
+OperatingSystem = Literal["windows", "macos", "linux", "ios", "android"]
+SessionStatus = Literal[
+    "NEW", "CREATED", "ERROR", "RUNNING", "REQUEST_RELEASE", "RELEASING", "COMPLETED"
+]
 
 
 class Screen(BaseModel):
@@ -47,10 +25,10 @@ class Screen(BaseModel):
 class Fingerprint(BaseModel):
     browserListQuery: Optional[str] = None
     httpVersion: Optional[int] = None
-    browsers: Optional[List[BrowserType]] = None
-    devices: Optional[List[DeviceType]] = None
-    locales: Optional[List[str]] = None
-    operatingSystems: Optional[List[OperatingSystem]] = None
+    browsers: Optional[list[BrowserType]] = None
+    devices: Optional[list[DeviceType]] = None
+    locales: Optional[list[str]] = None
+    operatingSystems: Optional[list[OperatingSystem]] = None
     screen: Optional[Screen] = None
 
 
@@ -129,7 +107,9 @@ class Browserbase:
         self.connect_url = connect_url or "wss://connect.browserbase.com"
         self.api_url = api_url or "https://www.browserbase.com"
 
-    def get_connect_url(self, session_id=None, proxy=False):
+    def get_connect_url(
+        self, session_id: Optional[str] = None, proxy: Optional[bool] = None
+    ):
         base_url = f"{self.connect_url}?apiKey={self.api_key}"
         if session_id:
             base_url += f"&sessionId={session_id}"
@@ -137,7 +117,7 @@ class Browserbase:
             base_url += "&enableProxy=true"
         return base_url
 
-    def list_sessions(self) -> List[Session]:
+    def list_sessions(self) -> list[Session]:
         response = httpx.get(
             f"{self.api_url}/v1/sessions",
             headers={
@@ -167,7 +147,7 @@ class Browserbase:
         response.raise_for_status()
         return Session(**response.json())
 
-    def get_session(self, session_id: str) -> List[Session]:
+    def get_session(self, session_id: str) -> Session:
         response = httpx.get(
             f"{self.api_url}/v1/sessions/{session_id}",
             headers={
@@ -198,7 +178,7 @@ class Browserbase:
         response.raise_for_status()
         return Session(**response.json())
 
-    def get_session_recording(self, session_id: str) -> List[SessionRecording]:
+    def get_session_recording(self, session_id: str) -> list[SessionRecording]:
         response = httpx.get(
             f"{self.api_url}/v1/sessions/{session_id}/recording",
             headers={
@@ -247,7 +227,7 @@ class Browserbase:
         response.raise_for_status()
         return DebugConnectionURLs(**response.json())
 
-    def get_session_logs(self, session_id: str) -> List[SessionLog]:
+    def get_session_logs(self, session_id: str) -> list[SessionLog]:
         response = httpx.get(
             f"{self.api_url}/v1/sessions/{session_id}/logs",
             headers={
