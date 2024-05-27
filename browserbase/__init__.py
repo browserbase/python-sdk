@@ -32,10 +32,20 @@ class Fingerprint(BaseModel):
     screen: Optional[Screen] = None
 
 
+class Viewport(BaseModel):
+    width: Optional[int] = None
+    height: Optional[int] = None
+
+
+class BrowserSettings(BaseModel):
+    fingerprint: Optional[Fingerprint] = None
+    viewport: Optional[Viewport] = None
+
+
 class CreateSessionOptions(BaseModel):
     projectId: Optional[str] = None
     extensionId: Optional[str] = None
-    fingerprint: Optional[Fingerprint] = None
+    browserSettings: Optional[BrowserSettings] = None
 
 
 class Session(BaseModel):
@@ -52,11 +62,6 @@ class Session(BaseModel):
     memory_usage: Optional[int] = None
     details: Optional[str] = None
     logs: Optional[str] = None
-
-
-class UpdateSessionOptions(BaseModel):
-    projectId: Optional[str] = None
-    status: Optional[SessionStatus] = None
 
 
 class SessionRecording(BaseModel):
@@ -154,25 +159,6 @@ class Browserbase:
                 "x-bb-api-key": self.api_key,
                 "Content-Type": "application/json",
             },
-        )
-
-        response.raise_for_status()
-        return Session(**response.json())
-
-    def update_session(
-        self, session_id: str, options: Optional[UpdateSessionOptions] = None
-    ) -> Session:
-        payload = {"projectId": self.project_id}
-        if options:
-            payload.update(options.model_dump(by_alias=True, exclude_none=True))
-
-        response = httpx.post(
-            f"{self.api_url}/v1/sessions/{session_id}",
-            headers={
-                "x-bb-api-key": self.api_key,
-                "Content-Type": "application/json",
-            },
-            json=payload,
         )
 
         response.raise_for_status()
