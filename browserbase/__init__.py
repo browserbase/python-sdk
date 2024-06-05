@@ -140,7 +140,7 @@ class Browserbase:
         if options:
             payload.update(options.model_dump(by_alias=True, exclude_none=True))
 
-        if not options['projectId']:
+        if not payload['projectId']:
             raise ValueError("a projectId is missing: use the options.projectId or BROWSERBASE_PROJECT_ID environment variable to set one.")
 
         response = httpx.post(
