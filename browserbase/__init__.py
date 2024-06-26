@@ -155,6 +155,30 @@ class Browserbase:
         response.raise_for_status()
         return Session(**response.json())
 
+    def complete_session(self, session_id: str) -> Session:
+        if not session_id or session_id == '':
+            raise ValueError('sessionId is required')
+
+        if not self.project_id:
+            raise ValueError(
+                'a projectId is missing: use the options.projectId or BROWSERBASE_PROJECT_ID environment variable to set one.'
+            )
+
+        response = httpx.post(
+            f"{self.api_url}/v1/sessions/{session_id}",
+            headers={
+                "x-bb-api-key": self.api_key,
+                "Content-Type": "application/json",
+            },
+            json={
+                "projectId": self.project_id,
+                "status": "REQUEST_RELEASE",
+            },
+        )
+
+        response.raise_for_status()
+        return Session(**response.json())
+
     def get_session(self, session_id: str) -> Session:
         response = httpx.get(
             f"{self.api_url}/v1/sessions/{session_id}",

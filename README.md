@@ -21,7 +21,7 @@
 - Get an API key from [browserbase.com](https://browserbase.com) and set it in environment variables (`BROWSERBASE_API_KEY`).
 - Install the required dependencies:
 
-```
+```sh
 pip install browserbase
 ```
 

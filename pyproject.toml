@@ -1,8 +1,8 @@
 [project]
 name = "browserbase"
-version = "0.1.5"
+version = "0.2.0"
 authors = [
-  { name="Browserbase", email="info@browserbase.com" },
+  { name="Browserbase", email="support@browserbase.com" },
 ]
 description = "Browserbase Python SDK"
 readme = "README.md"
@@ -27,3 +27,6 @@ Issues = "https://github.com/browserbase/python-sdk/issues"
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["browserbase"]
