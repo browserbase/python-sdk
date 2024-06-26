@@ -46,6 +46,8 @@ class CreateSessionOptions(BaseModel):
     projectId: Optional[str] = None
     extensionId: Optional[str] = None
     browserSettings: Optional[BrowserSettings] = None
+    timeout: Optional[int] = None
+    keepAlive: Optional[bool] = None
 
 
 class Session(BaseModel):
