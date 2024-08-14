@@ -11,7 +11,7 @@ BrowserType = Literal["chrome", "firefox", "edge", "safari"]
 DeviceType = Literal["desktop", "mobile"]
 OperatingSystem = Literal["windows", "macos", "linux", "ios", "android"]
 SessionStatus = Literal[
-    "NEW", "CREATED", "ERROR", "RUNNING", "REQUEST_RELEASE", "RELEASING", "COMPLETED"
+    "NEW", "CREATED", "ERROR", "RUNNING", "REQUEST_RELEASE", "RELEASING", "COMPLETED", "TIMED_OUT"
 ]
 
 
