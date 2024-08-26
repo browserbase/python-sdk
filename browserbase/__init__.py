@@ -1,10 +1,11 @@
 import os
 import httpx
 import time
-from typing import Optional, Sequence, Union, Literal
+from typing import Optional, Sequence, Union, Literal, Generator
 from enum import Enum
 from pydantic import BaseModel
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, Browser, Playwright
+from contextlib import contextmanager
 
 
 BrowserType = Literal["chrome", "firefox", "edge", "safari"]
@@ -142,8 +143,10 @@ class Browserbase:
         if options:
             payload.update(options.model_dump(by_alias=True, exclude_none=True))
 
-        if not payload['projectId']:
-            raise ValueError("a projectId is missing: use the options.projectId or BROWSERBASE_PROJECT_ID environment variable to set one.")
+        if not payload["projectId"]:
+            raise ValueError(
+                "a projectId is missing: use the options.projectId or BROWSERBASE_PROJECT_ID environment variable to set one."
+            )
 
         response = httpx.post(
             f"{self.api_url}/v1/sessions",
@@ -158,12 +161,12 @@ class Browserbase:
         return Session(**response.json())
 
     def complete_session(self, session_id: str) -> Session:
-        if not session_id or session_id == '':
-            raise ValueError('sessionId is required')
+        if not session_id or session_id == "":
+            raise ValueError("sessionId is required")
 
         if not self.project_id:
             raise ValueError(
-                'a projectId is missing: use the options.projectId or BROWSERBASE_PROJECT_ID environment variable to set one.'
+                "a projectId is missing: use the options.projectId or BROWSERBASE_PROJECT_ID environment variable to set one."
             )
 
         response = httpx.post(
@@ -283,10 +286,12 @@ class Browserbase:
             page.goto(url)
             html = page.content()
             if text_content:
-                readable = page.evaluate("""async () => {
+                readable = page.evaluate(
+                    """async () => {
                   const readability = await import('https://cdn.skypack.dev/@mozilla/readability');
                   return (new readability.Readability(document)).parse();
-                }""")
+                }"""
+                )
 
                 html = f"{readable['title']}\n{readable['textContent']}"
             browser.close()
@@ -316,10 +321,12 @@ class Browserbase:
                 page.goto(url)
                 html = page.content()
                 if text_content:
-                    readable = page.evaluate("""async () => {
+                    readable = page.evaluate(
+                        """async () => {
                       const readability = await import('https://cdn.skypack.dev/@mozilla/readability');
                       return (new readability.Readability(document)).parse();
-                    }""")
+                    }"""
+                    )
 
                     html = f"{readable['title']}\n{readable['textContent']}"
                 yield html
@@ -348,3 +355,58 @@ class Browserbase:
             browser.close()
 
             return screenshot
+
+    @contextmanager
+    def init_selenium(self, session_id: Optional[str] = None):
+        # Add imports here to avoid unnecesary dependencies
+        from selenium import webdriver
+        from selenium.webdriver.remote.remote_connection import RemoteConnection
+        from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+
+        class CustomRemoteConnection(RemoteConnection):
+            _session_id = None
+
+            def __init__(self, remote_server_addr: str, session_id: str):
+                super().__init__(remote_server_addr)
+                self._session_id = session_id
+
+            def get_remote_connection_headers(self, parsed_url, keep_alive=False):
+                headers = super().get_remote_connection_headers(parsed_url, keep_alive)
+                headers.update({"x-bb-api-key": os.environ["BROWSERBASE_API_KEY"]})
+                headers.update({"session-id": self._session_id})
+                return headers
+
+        if not session_id:
+            session = self.create_session()
+            session_id = session.id
+        custom_conn = CustomRemoteConnection(
+            "http://connect.browserbase.com/webdriver", session_id
+        )
+        options = webdriver.ChromeOptions()
+        driver = webdriver.Remote(custom_conn, options=options)
+        print("driver created")
+        yield driver
+        print("driver yielded")
+        try:
+            driver = webdriver.Remote(custom_conn, options=options)
+            yield driver
+        finally:
+            # Make sure to quit the driver so your session is ended!
+            if driver:
+                driver.quit()
+            self.complete_session(session_id)
+
+    def init_playwright(
+        self,
+        p: Playwright,
+        is_local: bool = False,
+        session_id: Optional[str] = None,
+        proxy: Optional[bool] = None,
+    ) -> Generator[Browser, None, None]:
+        if is_local:
+            browser = p.chromium.launch(headless=False)
+        else:
+            browser = p.chromium.connect_over_cdp(
+                self.get_connect_url(session_id, proxy)
+            )
+        return browser
