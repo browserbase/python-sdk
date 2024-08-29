@@ -161,3 +161,5 @@ cython_debug/
 .ruff_cache
 
 poetry.lock
+rrweb.json
+index.html

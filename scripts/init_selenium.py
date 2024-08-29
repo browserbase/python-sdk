@@ -10,7 +10,10 @@ BROWSERBASE_PROJECT_ID = os.environ["BROWSERBASE_PROJECT_ID"]
 bb = Browserbase(api_key=BROWSERBASE_API_KEY, project_id=BROWSERBASE_PROJECT_ID)
 IS_LOCAL = True
 
-with bb.init_selenium() as driver:
-    driver.get("https://www.browserbase.com")
-    get_title = driver.title
-    print(get_title)
+
+@bb.selenium
+def get_title(driver):
+    pass
+
+
+get_title()
