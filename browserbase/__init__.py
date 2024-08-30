@@ -4,7 +4,6 @@ import time
 from typing import Optional, Sequence, Union, Literal, Generator
 from enum import Enum
 from pydantic import BaseModel
-from playwright.sync_api import sync_playwright, Browser, Playwright
 from contextlib import contextmanager
 from functools import wraps
 from .helpers.utils import is_running_in_jupyter
@@ -97,106 +96,11 @@ class Browserbase:
 
         return fetch_download()
 
-    def load(self, url: Union[str, Sequence[str]], **args):
-        if isinstance(url, str):
-            return self.load_url(url, **args)
-        elif isinstance(url, Sequence):
-            return self.load_urls(url, **args)
-        else:
-            raise TypeError("Input must be a URL string or a Sequence of URLs")
-
-    def load_url(
-        self,
-        url: str,
-        text_content: bool = False,
-        session_id: Optional[str] = None,
-        proxy: Optional[bool] = None,
-    ):
-        """Load a page in a headless browser and return the contents"""
-        if not url:
-            raise ValueError("Page URL was not provided")
-
-        with sync_playwright() as p:
-            browser = p.chromium.connect_over_cdp(
-                self.get_connect_url(session_id, proxy)
-            )
-            default_context = browser.contexts[0]
-            page = default_context.pages[0]
-            page.goto(url)
-            html = page.content()
-            if text_content:
-                readable = page.evaluate(
-                    """async () => {
-				  const readability = await import('https://cdn.skypack.dev/@mozilla/readability');
-				  return (new readability.Readability(document)).parse();
-				}"""
-                )
-
-                html = f"{readable['title']}\n{readable['textContent']}"
-            browser.close()
-
-            return html
-
-    def load_urls(
-        self,
-        urls: Sequence[str],
-        text_content: bool = False,
-        session_id: Optional[str] = None,
-        proxy: Optional[bool] = None,
-    ):
-        """Load multiple pages in a headless browser and return the contents"""
-        if not urls:
-            raise ValueError("Page URL was not provided")
-
-        with sync_playwright() as p:
-            browser = p.chromium.connect_over_cdp(
-                self.get_connect_url(session_id, proxy)
-            )
-
-            default_context = browser.contexts[0]
-            page = default_context.pages[0]
-
-            for url in urls:
-                page.goto(url)
-                html = page.content()
-                if text_content:
-                    readable = page.evaluate(
-                        """async () => {
-					  const readability = await import('https://cdn.skypack.dev/@mozilla/readability');
-					  return (new readability.Readability(document)).parse();
-					}"""
-                    )
-
-                    html = f"{readable['title']}\n{readable['textContent']}"
-                yield html
-
-            browser.close()
-
-    def screenshot(
-        self,
-        url: str,
-        full_page: bool = False,
-        session_id: Optional[str] = None,
-        proxy: Optional[bool] = None,
-    ):
-        """Load a page in a headless browser and return a screenshot as bytes"""
-        if not url:
-            raise ValueError("Page URL was not provided")
-
-        with sync_playwright() as p:
-            browser = p.chromium.connect_over_cdp(
-                self.get_connect_url(session_id, proxy)
-            )
-
-            page = browser.new_page()
-            page.goto(url)
-            screenshot = page.screenshot(full_page=full_page)
-            browser.close()
-
-            return screenshot
+    def get_session_recording(self, session_id: str) -> SessionRecording:
+        return session_service.get_session_recording(self.api_key, session_id)
 
     def selenium(
-        self, func, session_id: Optional[str] = None, proxy: Optional[bool] = None
+        self, func, session_id: Optional[str] = None, keep_alive: bool = False
     ):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -222,10 +126,11 @@ class Browserbase:
                     headers.update({"session-id": self._session_id})
                     return headers
 
-            nonlocal session_id, proxy
+            nonlocal session_id
             if not session_id:
                 session = self.create_session()
                 session_id = session.id
+            self.sessions[func.__name__] = session_id
 
             enable_proxy = "?enableProxy=true" if proxy else ""
             custom_conn = CustomRemoteConnection(
@@ -234,61 +139,65 @@ class Browserbase:
             options = webdriver.ChromeOptions()
             driver = webdriver.Remote(custom_conn, options=options)
             result = func(driver, *args, **kwargs)
-            driver.quit()
-            self.complete_session(session_id)
-            self.sessions[func.__name__] = session_id
-            while True:
-                session = self.get_session(session_id)
-                if session.status == "COMPLETED":
-                    break
-                time.sleep(1)
+            if not keep_alive:
+                driver.quit()
+                self.complete_session(session_id)
             if result is None and is_running_in_jupyter():
                 return self.get_session_recording(session_id)
             return result
 
         return wrapper
 
-    @contextmanager
-    def init_playwright(
-        self,
-        session_id: Optional[str] = None,
-        proxy: Optional[bool] = None,
-    ) -> Generator[Browser, None, None]:
-        with sync_playwright() as p:
-            browser = p.chromium.connect_over_cdp(
-                self.get_connect_url(session_id, proxy)
-            )
-            yield browser
-
-    def record_rrweb(func):
+    def sync_playwright(
+        self, func, session_id: Optional[str] = None, keep_alive: bool = False
+    ):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            browser = args[0]  # Assuming the first argument is the browser object
-            page = browser.new_page()
+            from playwright.sync_api import sync_playwright, Browser, Playwright
 
-            # Inject rrweb script
-            page.add_script_tag(
-                url="https://cdn.jsdelivr.net/npm/rrweb@latest/dist/rrweb.min.js"
-            )
+            nonlocal session_id, keep_alive
+            if not session_id:
+                session = self.create_session()
+                session_id = session.id
+            self.sessions[func.__name__] = session_id
 
-            # Start recording
-            page.evaluate(
-                """
-				window.events = [];
-				rrweb.record({
-					emit: event => window.events.push(event)
-				});
-			"""
-            )
+            with sync_playwright() as p:
+                browser = p.chromium.connect_over_cdp(
+                    self.get_connect_url(session_id, proxy)
+                )
+                result = func(browser, *args, **kwargs)
+                if not keep_alive:
+                    browser.close()
+                    self.complete_session(session_id)
+                if result is None and is_running_in_jupyter():
+                    return self.get_session_recording(session_id)
+                return result
 
-            # Run the original function
-            result = func(*args, **kwargs)
+        return wrapper
 
-            # Stop recording and save events
-            events = page.evaluate("window.events")
-            with open("rrweb.json", "w") as f:
-                json.dump(events, f)
+    def async_playwright(
+        self, func, session_id: Optional[str] = None, keep_alive: bool = False
+    ):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            from playwright.async_api import async_playwright, Browser, Playwright
 
-            return result
+            nonlocal session_id, keep_alive
+            if not session_id:
+                session = self.create_session()
+                session_id = session.id
+            self.sessions[func.__name__] = session_id
+
+            async with async_playwright() as p:
+                browser = await p.chromium.connect_over_cdp(
+                    self.get_connect_url(session_id)
+                )
+                result = await func(browser, *args, **kwargs)
+                if not keep_alive:
+                    await browser.close()
+                    self.complete_session(session_id)
+                if result is None and is_running_in_jupyter():
+                    return self.get_session_recording(session_id)
+                return result
 
         return wrapper

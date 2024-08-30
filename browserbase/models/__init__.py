@@ -1,6 +1,8 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import Optional, Union, Literal, List
 from enum import Enum
+from uuid import uuid4
+import json
 
 
 class DefaultModel(BaseModel):
@@ -178,6 +180,62 @@ class DebugSession(DefaultModel):
     debugger_url: str = Field(alias="debuggerUrl")
     pages: List[Page]
     ws_url: str = Field(alias="wsUrl")
+
+
+# ------------------------------------------------------------
+
+
+class SessionRecordingItem(BaseModel):
+    timestamp: Optional[Union[str, int]] = None
+    # ANI QUESTION: why is this a string or int?
+    type: Optional[Union[str, int]] = None
+    data: Optional[dict] = None
+    sessionId: Optional[str] = None
+
+
+class SessionRecording(BaseModel):
+    sessionId: Optional[str] = None
+    items: list[SessionRecordingItem]
+
+    def _repr_html_(self):
+        divId = f"BB_LIVE_SESSION_{str(uuid4())}"
+        html_content = f"""
+		<div id="{divId}"></div>
+		<script src="https://cdn.jsdelivr.net/npm/rrweb@latest/dist/rrweb.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/rrweb-player@latest/dist/index.js"></script>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/rrweb-player@latest/dist/style.css"/>
+
+		<script>
+		(function() {{
+			var events = {json.dumps([item.model_dump() for item in self.items])};
+			
+			function initPlayer() {{
+				if (typeof rrwebPlayer === 'undefined') {{
+					console.log('rrweb player not loaded yet, retrying...');
+					setTimeout(initPlayer, 100);
+					return;
+				}}
+				
+				new rrwebPlayer({{
+					target: document.getElementById('{divId}'),
+					props: {{
+						events: events,
+						width: 800,
+						height: 600,
+						autoPlay: true
+					}}
+				}});
+			}}
+			
+			if (document.readyState === 'complete') {{
+				initPlayer();
+			}} else {{
+				window.addEventListener('load', initPlayer);
+			}}
+		}})();
+		</script>
+		"""
+        return html_content
 
 
 from . import context_service, session_service

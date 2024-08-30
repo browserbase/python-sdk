@@ -1,7 +1,9 @@
+# %%
 from dotenv import load_dotenv
 import os
 from browserbase import Browserbase
 import time
+import asyncio
 
 load_dotenv()
 
@@ -10,10 +12,16 @@ BROWSERBASE_PROJECT_ID = os.environ["BROWSERBASE_PROJECT_ID"]
 
 bb = Browserbase(api_key=BROWSERBASE_API_KEY, project_id=BROWSERBASE_PROJECT_ID)
 
-with bb.init_playwright() as browser:
-    page = browser.new_page()
-    page.goto("http://example.com")
+
+@bb.async_playwright
+async def run_browser(browser):
+    page = await browser.new_page()
+    await page.goto("http://example.com")
     # other actions...
-    time.sleep(5)
-    page.goto("http://browserbase.com")
-    time.sleep(10)
+    await asyncio.sleep(10)
+    await page.goto("http://browserbase.com")
+    await asyncio.sleep(10)
+
+
+# await run_browser()
+# %%

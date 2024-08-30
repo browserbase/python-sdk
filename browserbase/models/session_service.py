@@ -7,6 +7,8 @@ from . import (
     GeolocationProxy,
     CreateSessionOptions,
     DebugSession,
+    SessionRecording,
+    SessionRecordingItem,
 )
 
 SESSION_ENDPOINT = "https://www.browserbase.com/v1/sessions"
@@ -75,3 +77,15 @@ def debug_session(api_key: str, session_id: str) -> DebugSession:
     response = requests.request("GET", url, headers=headers)
     response.raise_for_status()
     return DebugSession(**response.json())
+
+
+def get_session_recording(api_key: str, session_id: str) -> SessionRecording:
+    url = f"{SESSION_ENDPOINT}/{session_id}/recording"
+    headers = {"X-BB-API-Key": api_key, "Content-Type": "application/json"}
+    response = requests.request("GET", url, headers=headers)
+    response.raise_for_status()
+    data = response.json()
+    return SessionRecording(
+        sessionId=session_id,
+        items=[SessionRecordingItem(**item) for item in data],
+    )
