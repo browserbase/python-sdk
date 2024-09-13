@@ -5,7 +5,8 @@ from typing import Optional, Sequence, Union, Literal
 from enum import Enum
 from pydantic import BaseModel
 from playwright.sync_api import sync_playwright
-
+from .browserbase import Browserbase
+from .helpers import Claude3Image, GPT4VImage, GPT4VImageDetail
 
 BrowserType = Literal["chrome", "firefox", "edge", "safari"]
 DeviceType = Literal["desktop", "mobile"]
@@ -348,3 +349,10 @@ class Browserbase:
             browser.close()
 
             return screenshot
+
+__all__ = [
+    "Browserbase",
+    "Claude3Image",
+    "GPT4VImage",
+    "GPT4VImageDetail",
+]
