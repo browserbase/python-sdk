@@ -1,11 +1,15 @@
 import os
 import httpx
 import time
-from typing import Optional, Sequence, Union, Literal
+from typing import Optional, Sequence, Union, Literal, Generator
 from enum import Enum
 from pydantic import BaseModel
-from playwright.sync_api import sync_playwright
-
+from playwright.sync_api import sync_playwright, Browser, Playwright
+from contextlib import contextmanager
+from functools import wraps
+from .helpers.utils import is_running_in_jupyter
+import json
+from uuid import uuid4
 
 BrowserType = Literal["chrome", "firefox", "edge", "safari"]
 DeviceType = Literal["desktop", "mobile"]
@@ -66,10 +70,57 @@ class Session(BaseModel):
     logs: Optional[str] = None
 
 
-class SessionRecording(BaseModel):
-    type: Optional[str] = None
-    time: Optional[str] = None
+class SessionRecordingItem(BaseModel):
+    timestamp: Optional[Union[str, int]] = None
+    # ANI QUESTION: why is this a string or int?
+    type: Optional[Union[str, int]] = None
     data: Optional[dict] = None
+    sessionId: Optional[str] = None
+
+
+class SessionRecording(BaseModel):
+    sessionId: Optional[str] = None
+    items: list[SessionRecordingItem]
+
+    def _repr_html_(self):
+        divId = uuid4()
+        html_content = f"""
+		<div id="BB_LIVE_SESSION_{divId}"></div>
+		<script src="https://cdn.jsdelivr.net/npm/rrweb@latest/dist/rrweb.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/rrweb-player@latest/dist/index.js"></script>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/rrweb-player@latest/dist/style.css"/>
+
+		<script>
+		(function() {{
+			var events = {json.dumps([item.model_dump() for item in self.items])};
+			
+			function initPlayer() {{
+				if (typeof rrwebPlayer === 'undefined') {{
+					console.log('rrweb player not loaded yet, retrying...');
+					setTimeout(initPlayer, 100);
+					return;
+				}}
+				
+				new rrwebPlayer({{
+					target: document.getElementById('BB_LIVE_SESSION_{divId}'),
+					props: {{
+						events: events,
+						width: 800,
+						height: 600,
+						autoPlay: true
+					}}
+				}});
+			}}
+			
+			if (document.readyState === 'complete') {{
+				initPlayer();
+			}} else {{
+				window.addEventListener('load', initPlayer);
+			}}
+		}})();
+		</script>
+		"""
+        return html_content
 
 
 class DebugConnectionURLs(BaseModel):
@@ -113,6 +164,7 @@ class Browserbase:
         self.project_id = project_id or os.environ["BROWSERBASE_PROJECT_ID"]
         self.connect_url = connect_url or "wss://connect.browserbase.com"
         self.api_url = api_url or "https://www.browserbase.com"
+        self.sessions = {}
 
     def get_connect_url(
         self, session_id: Optional[str] = None, proxy: Optional[bool] = None
@@ -142,8 +194,10 @@ class Browserbase:
         if options:
             payload.update(options.model_dump(by_alias=True, exclude_none=True))
 
-        if not payload['projectId']:
-            raise ValueError("a projectId is missing: use the options.projectId or BROWSERBASE_PROJECT_ID environment variable to set one.")
+        if not payload["projectId"]:
+            raise ValueError(
+                "a projectId is missing: use the options.projectId or BROWSERBASE_PROJECT_ID environment variable to set one."
+            )
 
         response = httpx.post(
             f"{self.api_url}/v1/sessions",
@@ -158,12 +212,12 @@ class Browserbase:
         return Session(**response.json())
 
     def complete_session(self, session_id: str) -> Session:
-        if not session_id or session_id == '':
-            raise ValueError('sessionId is required')
+        if not session_id or session_id == "":
+            raise ValueError("sessionId is required")
 
         if not self.project_id:
             raise ValueError(
-                'a projectId is missing: use the options.projectId or BROWSERBASE_PROJECT_ID environment variable to set one.'
+                "a projectId is missing: use the options.projectId or BROWSERBASE_PROJECT_ID environment variable to set one."
             )
 
         response = httpx.post(
@@ -193,7 +247,7 @@ class Browserbase:
         response.raise_for_status()
         return Session(**response.json())
 
-    def get_session_recording(self, session_id: str) -> list[SessionRecording]:
+    def get_session_recording(self, session_id: str) -> SessionRecording:
         response = httpx.get(
             f"{self.api_url}/v1/sessions/{session_id}/recording",
             headers={
@@ -204,7 +258,10 @@ class Browserbase:
 
         response.raise_for_status()
         data = response.json()
-        return [SessionRecording(**item) for item in data]
+        return SessionRecording(
+            sessionId=session_id,
+            items=[SessionRecordingItem(**item) for item in data],
+        )
 
     def get_session_downloads(
         self, session_id: str, retry_interval: int = 2000, retry_count: int = 2
@@ -283,10 +340,12 @@ class Browserbase:
             page.goto(url)
             html = page.content()
             if text_content:
-                readable = page.evaluate("""async () => {
-                  const readability = await import('https://cdn.skypack.dev/@mozilla/readability');
-                  return (new readability.Readability(document)).parse();
-                }""")
+                readable = page.evaluate(
+                    """async () => {
+				  const readability = await import('https://cdn.skypack.dev/@mozilla/readability');
+				  return (new readability.Readability(document)).parse();
+				}"""
+                )
 
                 html = f"{readable['title']}\n{readable['textContent']}"
             browser.close()
@@ -316,10 +375,12 @@ class Browserbase:
                 page.goto(url)
                 html = page.content()
                 if text_content:
-                    readable = page.evaluate("""async () => {
-                      const readability = await import('https://cdn.skypack.dev/@mozilla/readability');
-                      return (new readability.Readability(document)).parse();
-                    }""")
+                    readable = page.evaluate(
+                        """async () => {
+					  const readability = await import('https://cdn.skypack.dev/@mozilla/readability');
+					  return (new readability.Readability(document)).parse();
+					}"""
+                    )
 
                     html = f"{readable['title']}\n{readable['textContent']}"
                 yield html
@@ -348,3 +409,140 @@ class Browserbase:
             browser.close()
 
             return screenshot
+
+    @contextmanager
+    def init_selenium(
+        self, session_id: Optional[str] = None, proxy: Optional[bool] = None
+    ):
+        # Add imports here to avoid unnecesary dependencies
+        from selenium import webdriver
+        from selenium.webdriver.remote.remote_connection import RemoteConnection
+        from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+
+        class CustomRemoteConnection(RemoteConnection):
+            _session_id = None
+
+            def __init__(self, remote_server_addr: str, session_id: str):
+                super().__init__(remote_server_addr)
+                self._session_id = session_id
+
+            def get_remote_connection_headers(self, parsed_url, keep_alive=False):
+                headers = super().get_remote_connection_headers(parsed_url, keep_alive)
+                headers.update({"x-bb-api-key": os.environ["BROWSERBASE_API_KEY"]})
+                headers.update({"session-id": self._session_id})
+                return headers
+
+        if not session_id:
+            session = self.create_session()
+            session_id = session.id
+        enable_proxy = "?enableProxy=true" if proxy else ""
+        custom_conn = CustomRemoteConnection(
+            "http://connect.browserbase.com/webdriver" + enable_proxy, session_id
+        )
+        options = webdriver.ChromeOptions()
+        try:
+            driver = webdriver.Remote(custom_conn, options=options)
+            yield driver
+        finally:
+            # Make sure to quit the driver so your session is ended!
+            if driver:
+                driver.quit()
+            self.complete_session(session_id)
+
+    def selenium(
+        self, func, session_id: Optional[str] = None, proxy: Optional[bool] = None
+    ):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Add imports here to avoid unnecesary dependencies
+            from selenium import webdriver
+            from selenium.webdriver.remote.remote_connection import RemoteConnection
+            from selenium.webdriver.common.desired_capabilities import (
+                DesiredCapabilities,
+            )
+
+            class CustomRemoteConnection(RemoteConnection):
+                _session_id = None
+
+                def __init__(self, remote_server_addr: str, session_id: str):
+                    super().__init__(remote_server_addr)
+                    self._session_id = session_id
+
+                def get_remote_connection_headers(self, parsed_url, keep_alive=False):
+                    headers = super().get_remote_connection_headers(
+                        parsed_url, keep_alive
+                    )
+                    headers.update({"x-bb-api-key": os.environ["BROWSERBASE_API_KEY"]})
+                    headers.update({"session-id": self._session_id})
+                    return headers
+
+            nonlocal session_id, proxy
+            if not session_id:
+                session = self.create_session()
+                session_id = session.id
+
+            enable_proxy = "?enableProxy=true" if proxy else ""
+            custom_conn = CustomRemoteConnection(
+                "http://connect.browserbase.com/webdriver" + enable_proxy, session_id
+            )
+            options = webdriver.ChromeOptions()
+            driver = webdriver.Remote(custom_conn, options=options)
+            result = func(driver, *args, **kwargs)
+            driver.quit()
+            self.complete_session(session_id)
+            self.sessions[func.__name__] = session_id
+            while True:
+                session = self.get_session(session_id)
+                if session.status == "COMPLETED":
+                    break
+                time.sleep(1)
+            if result is None and is_running_in_jupyter():
+                return self.get_session_recording(session_id)
+            return result
+
+        return wrapper
+
+    @contextmanager
+    def init_playwright(
+        self,
+        session_id: Optional[str] = None,
+        proxy: Optional[bool] = None,
+    ) -> Generator[Browser, None, None]:
+        with sync_playwright() as p:
+            browser = p.chromium.connect_over_cdp(
+                self.get_connect_url(session_id, proxy)
+            )
+            yield browser
+
+    def record_rrweb(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            browser = args[0]  # Assuming the first argument is the browser object
+            page = browser.new_page()
+
+            # Inject rrweb script
+            page.add_script_tag(
+                url="https://cdn.jsdelivr.net/npm/rrweb@latest/dist/rrweb.min.js"
+            )
+
+            # Start recording
+            page.evaluate(
+                """
+				window.events = [];
+				rrweb.record({
+					emit: event => window.events.push(event)
+				});
+			"""
+            )
+
+            # Run the original function
+            result = func(*args, **kwargs)
+
+            # Stop recording and save events
+            events = page.evaluate("window.events")
+            with open("rrweb.json", "w") as f:
+                json.dump(events, f)
+
+            return result
+
+        return wrapper
