@@ -61,7 +61,7 @@ class Session(BaseModel):
     id: str
     createdAt: str
     startedAt: str
-    endedAt: Optional[str]
+    endedAt: Optional[str] = None
     projectId: str
     status: Optional[SessionStatus] = None
     taskId: Optional[str] = None
