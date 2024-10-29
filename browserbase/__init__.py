@@ -1,17 +1,24 @@
 import os
-import httpx
 import time
-from typing import Optional, Sequence, Union, Literal
 from enum import Enum
-from pydantic import BaseModel
-from playwright.sync_api import sync_playwright
+from typing import Literal, Optional, Sequence, Union
 
+import httpx
+from playwright.sync_api import sync_playwright
+from pydantic import BaseModel
 
 BrowserType = Literal["chrome", "firefox", "edge", "safari"]
 DeviceType = Literal["desktop", "mobile"]
 OperatingSystem = Literal["windows", "macos", "linux", "ios", "android"]
 SessionStatus = Literal[
-    "NEW", "CREATED", "ERROR", "RUNNING", "REQUEST_RELEASE", "RELEASING", "COMPLETED", "TIMED_OUT"
+    "NEW",
+    "CREATED",
+    "ERROR",
+    "RUNNING",
+    "REQUEST_RELEASE",
+    "RELEASING",
+    "COMPLETED",
+    "TIMED_OUT",
 ]
 
 
@@ -112,7 +119,7 @@ class Browserbase:
         self.api_key = api_key or os.environ["BROWSERBASE_API_KEY"]
         self.project_id = project_id or os.environ["BROWSERBASE_PROJECT_ID"]
         self.connect_url = connect_url or "wss://connect.browserbase.com"
-        self.api_url = api_url or "https://www.browserbase.com"
+        self.api_url = api_url or "https://api.browserbase.com"
 
     def get_connect_url(
         self, session_id: Optional[str] = None, proxy: Optional[bool] = None
@@ -142,8 +149,10 @@ class Browserbase:
         if options:
             payload.update(options.model_dump(by_alias=True, exclude_none=True))
 
-        if not payload['projectId']:
-            raise ValueError("a projectId is missing: use the options.projectId or BROWSERBASE_PROJECT_ID environment variable to set one.")
+        if not payload["projectId"]:
+            raise ValueError(
+                "a projectId is missing: use the options.projectId or BROWSERBASE_PROJECT_ID environment variable to set one."
+            )
 
         response = httpx.post(
             f"{self.api_url}/v1/sessions",
@@ -158,12 +167,12 @@ class Browserbase:
         return Session(**response.json())
 
     def complete_session(self, session_id: str) -> Session:
-        if not session_id or session_id == '':
-            raise ValueError('sessionId is required')
+        if not session_id or session_id == "":
+            raise ValueError("sessionId is required")
 
         if not self.project_id:
             raise ValueError(
-                'a projectId is missing: use the options.projectId or BROWSERBASE_PROJECT_ID environment variable to set one.'
+                "a projectId is missing: use the options.projectId or BROWSERBASE_PROJECT_ID environment variable to set one."
             )
 
         response = httpx.post(
@@ -283,10 +292,12 @@ class Browserbase:
             page.goto(url)
             html = page.content()
             if text_content:
-                readable = page.evaluate("""async () => {
+                readable = page.evaluate(
+                    """async () => {
                   const readability = await import('https://cdn.skypack.dev/@mozilla/readability');
                   return (new readability.Readability(document)).parse();
-                }""")
+                }"""
+                )
 
                 html = f"{readable['title']}\n{readable['textContent']}"
             browser.close()
@@ -316,10 +327,12 @@ class Browserbase:
                 page.goto(url)
                 html = page.content()
                 if text_content:
-                    readable = page.evaluate("""async () => {
+                    readable = page.evaluate(
+                        """async () => {
                       const readability = await import('https://cdn.skypack.dev/@mozilla/readability');
                       return (new readability.Readability(document)).parse();
-                    }""")
+                    }"""
+                    )
 
                     html = f"{readable['title']}\n{readable['textContent']}"
                 yield html
