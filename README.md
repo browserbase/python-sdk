@@ -1,3 +1,5 @@
+# DEPRECATED. Please refer to v1.0.0 at [browserbase/sdk-python](https://github.com/browserbase/sdk-python)
+
 <p align="center">
     <picture>
         <source media="(prefers-color-scheme: dark)" srcset="logo/dark.svg"/>
