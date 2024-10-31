@@ -90,25 +90,27 @@ class DebugConnectionURLs(BaseModel):
 
 
 class Request(BaseModel):
-    timestamp: Optional[str] = None
+    timestamp: Optional[Union[str, int]] = None
     params: Optional[dict] = None
     rawBody: Optional[str] = None
 
 
 class Response(BaseModel):
-    timestamp: Optional[str] = None
+    timestamp: Optional[Union[str, int]] = None
     result: Optional[dict] = None
     rawBody: Optional[str] = None
 
 
 class SessionLog(BaseModel):
     sessionId: Optional[str] = None
-    id: Optional[str] = None
     timestamp: Optional[str] = None
     method: Optional[str] = None
     request: Optional[Request] = None
     response: Optional[Response] = None
     pageId: Optional[str] = None
+    eventId: Optional[str] = None
+    frameId: Optional[str] = None
+    loaderId: Optional[str] = None
 
 
 class Browserbase:
