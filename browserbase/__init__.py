@@ -4,7 +4,7 @@ from typing import Literal, Optional, Sequence, Union
 
 import httpx
 from playwright.sync_api import sync_playwright
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, TypeAdapter
 
 BrowserType = Literal["chrome", "firefox", "edge", "safari"]
 DeviceType = Literal["desktop", "mobile"]
@@ -148,7 +148,7 @@ class Browserbase:
 
         response.raise_for_status()
         data = response.json()
-        return [Session(**item) for item in data]
+        return TypeAdapter(list[Session]).validate_python(data)
 
     def create_session(self, options: Optional[CreateSessionOptions] = None) -> Session:
         payload = {"projectId": self.project_id}
@@ -170,7 +170,7 @@ class Browserbase:
         )
 
         response.raise_for_status()
-        return Session(**response.json())
+        return TypeAdapter(Session).validate_python(response.json())
 
     def complete_session(self, session_id: str) -> Session:
         if not session_id or session_id == "":
@@ -194,7 +194,7 @@ class Browserbase:
         )
 
         response.raise_for_status()
-        return Session(**response.json())
+        return TypeAdapter(Session).validate_python(response.json())
 
     def get_session(self, session_id: str) -> Session:
         response = httpx.get(
@@ -206,7 +206,7 @@ class Browserbase:
         )
 
         response.raise_for_status()
-        return Session(**response.json())
+        return TypeAdapter(Session).validate_python(response.json())
 
     def get_session_recording(self, session_id: str) -> list[SessionRecording]:
         response = httpx.get(
@@ -219,7 +219,7 @@ class Browserbase:
 
         response.raise_for_status()
         data = response.json()
-        return [SessionRecording(**item) for item in data]
+        return TypeAdapter(list[SessionRecording]).validate_python(data)
 
     def get_session_downloads(
         self, session_id: str, retry_interval: int = 2000, retry_count: int = 2
@@ -255,7 +255,7 @@ class Browserbase:
         )
 
         response.raise_for_status()
-        return DebugConnectionURLs(**response.json())
+        return TypeAdapter(DebugConnectionURLs).validate_python(response.json())
 
     def get_session_logs(self, session_id: str) -> list[SessionLog]:
         response = httpx.get(
@@ -268,7 +268,7 @@ class Browserbase:
 
         response.raise_for_status()
         data = response.json()
-        return [SessionLog(**item) for item in data]
+        return TypeAdapter(list[SessionLog]).validate_python(data)
 
     def load(self, url: Union[str, Sequence[str]], **args):
         if isinstance(url, str):
