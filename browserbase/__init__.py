@@ -1,11 +1,10 @@
 import os
 import time
-from enum import Enum
 from typing import Literal, Optional, Sequence, Union
 
 import httpx
 from playwright.sync_api import sync_playwright
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 BrowserType = Literal["chrome", "firefox", "edge", "safari"]
 DeviceType = Literal["desktop", "mobile"]
@@ -60,23 +59,28 @@ class CreateSessionOptions(BaseModel):
 class Session(BaseModel):
     id: str
     createdAt: str
+    updatedAt: str
+    projectId: str
     startedAt: str
     endedAt: Optional[str] = None
-    projectId: str
-    status: Optional[SessionStatus] = None
-    taskId: Optional[str] = None
-    proxyBytes: Optional[int] = None
     expiresAt: Optional[str] = None
-    avg_cpu_usage: Optional[float] = None
-    memory_usage: Optional[int] = None
+    status: str
+    proxyBytes: Optional[int] = None
+    taskId: Optional[str] = None
+    avg_cpu_usage: Optional[float] = Field(None, alias="avgCpuUsage")
+    memory_usage: Optional[int] = Field(None, alias="memoryUsage")
+    keep_alive: Optional[bool] = Field(None, alias="keepAlive")
+    context_id: Optional[str] = Field(None, alias="contextId")
     details: Optional[str] = None
     logs: Optional[str] = None
 
 
 class SessionRecording(BaseModel):
+    id: Optional[str] = None
     type: Optional[str] = None
-    time: Optional[str] = None
+    timestamp: Optional[Union[str, int]] = None
     data: Optional[dict] = None
+    session_id: Optional[str] = Field(None, alias="sessionId")
 
 
 class DebugConnectionURLs(BaseModel):
@@ -86,25 +90,27 @@ class DebugConnectionURLs(BaseModel):
 
 
 class Request(BaseModel):
-    timestamp: Optional[str]
-    params: Optional[dict]
+    timestamp: Optional[Union[str, int]] = None
+    params: Optional[dict] = None
     rawBody: Optional[str] = None
 
 
 class Response(BaseModel):
-    timestamp: Optional[str]
-    result: Optional[dict]
+    timestamp: Optional[Union[str, int]] = None
+    result: Optional[dict] = None
     rawBody: Optional[str] = None
 
 
 class SessionLog(BaseModel):
     sessionId: Optional[str] = None
-    id: str
-    timestamp: Optional[str]
-    method: Optional[str]
-    request: Optional[Request]
-    response: Optional[Response]
+    timestamp: Optional[str] = None
+    method: Optional[str] = None
+    request: Optional[Request] = None
+    response: Optional[Response] = None
     pageId: Optional[str] = None
+    eventId: Optional[str] = None
+    frameId: Optional[str] = None
+    loaderId: Optional[str] = None
 
 
 class Browserbase:
