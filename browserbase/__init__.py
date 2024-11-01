@@ -1,11 +1,18 @@
 import os
 import time
+import tomli
 from typing import Literal, Optional, Sequence, Union
 
 import httpx
 from playwright.sync_api import sync_playwright
 from pydantic import BaseModel, Field, TypeAdapter
 
+# Read version from pyproject.toml
+with open(os.path.join(os.path.dirname(__file__), "..", "pyproject.toml"), "rb") as f:
+    pyproject = tomli.load(f)
+    BROWSERBASE_CLIENT_SDK_VERSION = pyproject["project"]["version"]
+
+client_name = f"browserbase-python=={BROWSERBASE_CLIENT_SDK_VERSION}"
 BrowserType = Literal["chrome", "firefox", "edge", "safari"]
 DeviceType = Literal["desktop", "mobile"]
 OperatingSystem = Literal["windows", "macos", "linux", "ios", "android"]
@@ -142,6 +149,7 @@ class Browserbase:
             f"{self.api_url}/v1/sessions",
             headers={
                 "x-bb-api-key": self.api_key,
+                "x-client-name": client_name,
                 "Content-Type": "application/json",
             },
         )
@@ -164,6 +172,7 @@ class Browserbase:
             f"{self.api_url}/v1/sessions",
             headers={
                 "x-bb-api-key": self.api_key,
+                "x-client-name": client_name,
                 "Content-Type": "application/json",
             },
             json=payload,
@@ -185,6 +194,7 @@ class Browserbase:
             f"{self.api_url}/v1/sessions/{session_id}",
             headers={
                 "x-bb-api-key": self.api_key,
+                "x-client-name": client_name,
                 "Content-Type": "application/json",
             },
             json={
@@ -201,6 +211,7 @@ class Browserbase:
             f"{self.api_url}/v1/sessions/{session_id}",
             headers={
                 "x-bb-api-key": self.api_key,
+                "x-client-name": client_name,
                 "Content-Type": "application/json",
             },
         )
@@ -213,6 +224,7 @@ class Browserbase:
             f"{self.api_url}/v1/sessions/{session_id}/recording",
             headers={
                 "x-bb-api-key": self.api_key,
+                "x-client-name": client_name,
                 "Content-Type": "application/json",
             },
         )
@@ -231,6 +243,7 @@ class Browserbase:
                 f"{self.api_url}/v1/sessions/{session_id}/downloads",
                 headers={
                     "x-bb-api-key": self.api_key,
+                    "x-client-name": client_name,
                 },
             )
             content = response.read()
@@ -250,6 +263,7 @@ class Browserbase:
             f"{self.api_url}/v1/sessions/{session_id}/debug",
             headers={
                 "x-bb-api-key": self.api_key,
+                "x-client-name": client_name,
                 "Content-Type": "application/json",
             },
         )
@@ -262,6 +276,7 @@ class Browserbase:
             f"{self.api_url}/v1/sessions/{session_id}/logs",
             headers={
                 "x-bb-api-key": self.api_key,
+                "x-client-name": client_name,
                 "Content-Type": "application/json",
             },
         )
