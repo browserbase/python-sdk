@@ -1,6 +1,10 @@
 import os
 import time
-import tomli
+
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
 from typing import Literal, Optional, Sequence, Union
 
 import httpx
@@ -9,7 +13,7 @@ from pydantic import BaseModel, Field, TypeAdapter
 
 # Read version from pyproject.toml
 with open(os.path.join(os.path.dirname(__file__), "..", "pyproject.toml"), "rb") as f:
-    pyproject = tomli.load(f)
+    pyproject = tomllib.load(f)
     BROWSERBASE_CLIENT_SDK_VERSION = pyproject["project"]["version"]
 
 client_name = f"browserbase-python=={BROWSERBASE_CLIENT_SDK_VERSION}"
